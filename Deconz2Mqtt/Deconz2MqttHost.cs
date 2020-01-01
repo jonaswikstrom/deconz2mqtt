@@ -46,12 +46,9 @@ namespace Deconz2Mqtt
 
             deconzHeartBeatTimer.OnHeartBeat(async () =>
             {
-                //var fullState = await deconzWebServiceProvider.GetFullState();
-                //CreateOrUpdateSensorsDictionary(fullState);
-                //await SendSensorsDictionaryData();
-
-                applicationLifetime.StopApplication();
-
+                var fullState = await deconzWebServiceProvider.GetFullState();
+                CreateOrUpdateSensorsDictionary(fullState);
+                await SendSensorsDictionaryData();
             });
 
 
@@ -69,19 +66,10 @@ namespace Deconz2Mqtt
             });
 
         }
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             applicationLifetime.ApplicationStarted.Register(async () => await OnStarted());
-
-            //await mqttClient.ConnectAsync(applicationLifetime.ApplicationStopping);
-
-            //var fullState = await deconzWebServiceProvider.GetFullState();
-            //CreateOrUpdateSensorsDictionary(fullState);
-            //await SendSensorsDictionaryData();
-            //deconzHeartBeatTimer.Start();
-
-
-            //await deconzWebSocketServiceProvider.ConnectAsync(applicationLifetime.ApplicationStopping);
+            return Task.CompletedTask;
         }
 
         private async Task OnStarted()
