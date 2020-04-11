@@ -56,7 +56,7 @@ namespace Deconz2Mqtt
             {
                 if (!sensorsDictionary.TryGetValue(message.Id, out var sensor)) return;
 
-                var mqttMessages = sensorToMqttMessageHandlers.Select(p => p.HandleState(sensor.Name, sensor.State))
+                var mqttMessages = sensorToMqttMessageHandlers.Select(p => p.HandleState(sensor.Name, message.State))
                     .Where(p => p != null);
 
                 foreach (var mmqttMessage in mqttMessages)

@@ -66,7 +66,7 @@ namespace Deconz2Mqtt.Infrastructure
                 .Build();
 
             await client.PublishAsync(message, CancellationToken.None);
-            logger.LogInformation($"Pubished '{settings.Value.TopicRoot}/{mqttMessage.Topic} {mqttMessage.Payload}'");
+            logger.LogInformation($"Published '{settings.Value.TopicRoot}/{mqttMessage.Topic} {mqttMessage.Payload}'");
         }
 
         public async Task DisconnectAsync()

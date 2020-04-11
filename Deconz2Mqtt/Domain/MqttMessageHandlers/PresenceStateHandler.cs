@@ -6,6 +6,6 @@ namespace Deconz2Mqtt.Domain.MqttMessageHandlers
     {
         protected override bool? Value(State state) => state.Presence;
 
-        protected override string TopicType => "presense";
+        protected override string TopicType => "presence";
     }
 }

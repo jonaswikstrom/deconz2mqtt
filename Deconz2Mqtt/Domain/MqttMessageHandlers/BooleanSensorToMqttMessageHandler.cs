@@ -11,7 +11,9 @@ namespace Deconz2Mqtt.Domain.MqttMessageHandlers
         public MqttMessage HandleState(string sensorName, State state)
         {
             var value = Value(state);
-            return !value.HasValue ? null : new MqttMessage($"sensor/{new MqttMessageHandlerSensorName(sensorName)}/{TopicType.ToLower()}", value.Value.ToString(CultureInfo.InvariantCulture));
+            
+            if(!value.HasValue) return null;
+            return new MqttMessage($"sensor/{new MqttMessageHandlerSensorName(sensorName)}/{TopicType.ToLower()}", value.Value.ToString(CultureInfo.InvariantCulture));
         }
     }
 }
