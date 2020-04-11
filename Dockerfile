@@ -15,4 +15,4 @@ RUN dotnet publish -c Release -o out
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/Deconz2Mqtt/out ./
-ENTRYPOINT ["dotnet", "deconz2mqtt.dll"]
+ENTRYPOINT ["dotnet", "Deconz2Mqtt.dll"]

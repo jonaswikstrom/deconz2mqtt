@@ -30,6 +30,12 @@ namespace Deconz2Mqtt.Domain.Model
         public long? Humidity { get; set; }
 
         [JsonProperty("pressure", NullValueHandling = NullValueHandling.Ignore)]
-        public long? Pressure { get; set; }
+        public int? Pressure { get; set; }
+
+        [JsonProperty("presence", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Presence { get; set; }
+
+        [JsonProperty("lux", NullValueHandling = NullValueHandling.Ignore)]
+        public int? Lux { get; set; }
     }
 }
