@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain;
 using Deconz2Mqtt.Domain.Model;
@@ -6,8 +8,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MQTTnet;
+using MQTTnet.Client;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
+using MQTTnet.Client.Subscribing;
+using MQTTnet.Client.Unsubscribing;
+using IMqttClient = Deconz2Mqtt.Domain.IMqttClient;
 
 namespace Deconz2Mqtt.Infrastructure
 {
@@ -34,12 +40,19 @@ namespace Deconz2Mqtt.Infrastructure
                 .WithTcpServer(settings.Value.HostName)
                 .WithCredentials(settings.Value.Username, settings.Value.Password)
                 .Build();
+
         }
 
         public async Task ConnectAsync()
         {
             logger.LogInformation($"Connecting MQTT on {settings.Value.HostName}");
             await client.ConnectAsync(options, CancellationToken.None);
+
+            client.UseApplicationMessageReceivedHandler(e =>
+            {
+                var mqttMessage = new MqttMessage(e.ApplicationMessage.Topic, e.ApplicationMessage.ConvertPayloadToString());
+                OnMessageReceived?.Invoke(this, mqttMessage);
+            });
 
             client.DisconnectedHandler = new MqttClientDisconnectedHandlerDelegate(OnDisconnected);
             logger.LogInformation("Connected");
@@ -80,5 +93,13 @@ namespace Deconz2Mqtt.Infrastructure
             };
             await client.DisconnectAsync(disconnectOptions, CancellationToken.None);
         }
+
+        public async Task Subscribe(string topic)
+        {
+            await client.SubscribeAsync(new TopicFilterBuilder().WithTopic(topic).Build());
+        }
+
+        public event EventHandler<MqttMessage> OnMessageReceived;
     }
+
 }

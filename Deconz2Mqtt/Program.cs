@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain;
 using Deconz2Mqtt.Domain.Model;
-using Deconz2Mqtt.Domain.MqttMessageHandlers;
 using Deconz2Mqtt.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,20 +26,14 @@ namespace Deconz2Mqtt
             var hostBuilder = new HostBuilder().ConfigureServices(p =>
             {
                 p.AddLogging(p => p.AddConsole())
-                    .AddSingleton<IDeconzHeartBeatTimer, DeconzHeartBeatTimer>()
-                    .AddSingleton<IDeconzWebServiceProvider, DeconzWebServiceProvider>()
-                    .AddSingleton<IDeconzWebSocketServiceProvider, DeconzWebSocketServiceProvider>()
+                    .AddSingleton<IWebServiceProvider, WebServiceProvider>()
+                    .AddSingleton<IWebSocketServiceProvider, WebSocketServiceProvider>()
                     .AddSingleton<IMqttClient, MqttClient>()
-                    .AddSingleton<ISensorToMqttMessageHandler, HumidityStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, TemperatureStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, PressureStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, PresenceStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, DarkStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, DaylightStateHandler>()
-                    .AddSingleton<ISensorToMqttMessageHandler, LuxStateHandler>()
+   
                     .AddSingleton<IConfiguration>(configuration)
                     .Configure<DeconzSettings>(configuration.GetSection("Deconz"))
                     .Configure<MqttSettings>(configuration.GetSection("Mqtt"))
+                    .Configure<MappingsConfiguration>(configuration.GetSection("Mappings"))
                     .AddHostedService<Deconz2MqttHost>();
             });
 

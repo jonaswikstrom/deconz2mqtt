@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
-using Deconz2Mqtt.Domain.Model;
+using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Domain
 {
-    public interface IDeconzWebServiceProvider
+    public interface IWebServiceProvider
     {
-        Task<FullState> GetFullState();
+        Task<JObject> GetState(string uri);
+        Task SetState(string uri, string payload);
     }
 }

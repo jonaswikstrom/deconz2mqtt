@@ -2,14 +2,15 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain.Model;
+using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Domain
 {
-    public interface IDeconzWebSocketServiceProvider
+    public interface IWebSocketServiceProvider
     {
         Task ConnectAsync();
         Task DisconnectAsync();
 
-        void OnMessageReceived(Action<WebSocketMessage> action);
+        event EventHandler<JObject> OnMessageReceived;
     }
 }
