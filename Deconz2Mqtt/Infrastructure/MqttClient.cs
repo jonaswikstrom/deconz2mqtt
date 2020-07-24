@@ -46,7 +46,6 @@ namespace Deconz2Mqtt.Infrastructure
         public async Task ConnectAsync()
         {
             logger.LogInformation($"Connecting MQTT on {settings.Value.HostName}");
-            await client.ConnectAsync(options, CancellationToken.None);
 
             client.UseApplicationMessageReceivedHandler(e =>
             {
@@ -54,6 +53,7 @@ namespace Deconz2Mqtt.Infrastructure
                 OnMessageReceived?.Invoke(this, mqttMessage);
             });
 
+            await client.ConnectAsync(options, CancellationToken.None);
             client.DisconnectedHandler = new MqttClientDisconnectedHandlerDelegate(OnDisconnected);
             logger.LogInformation("Connected");
         }
@@ -86,6 +86,7 @@ namespace Deconz2Mqtt.Infrastructure
         {
             if (client == null) return;
             disconnecting = true;
+   
             var disconnectOptions = new MqttClientDisconnectOptions()
             {
                ReasonCode = MqttClientDisconnectReason.NormalDisconnection,
@@ -97,6 +98,11 @@ namespace Deconz2Mqtt.Infrastructure
         public async Task Subscribe(string topic)
         {
             await client.SubscribeAsync(new TopicFilterBuilder().WithTopic(topic).Build());
+        }
+
+        public async Task UnSubscribe(string topic)
+        {
+            await client.UnsubscribeAsync(topic);
         }
 
         public event EventHandler<MqttMessage> OnMessageReceived;

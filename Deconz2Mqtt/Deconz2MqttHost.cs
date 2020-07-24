@@ -26,6 +26,7 @@ namespace Deconz2Mqtt
         private readonly IHostApplicationLifetime applicationLifetime;
         private readonly IOptions<MappingsConfiguration> mappingConfiguration;
         private Sensor[] sensors;
+        private Light[] lights;
 
         public Deconz2MqttHost(ILogger<Deconz2MqttHost> logger,
             IWebServiceProvider webServiceProvider,
@@ -53,7 +54,8 @@ namespace Deconz2Mqtt
             {
                 mqttClient.ConnectAsync(),
                 webSocketServiceProvider.ConnectAsync(),
-                InitiateSensors()
+                InitiateSensors(),
+                InitiateLights()
             };
 
             await Task.WhenAll(tasks);
@@ -73,6 +75,20 @@ namespace Deconz2Mqtt
             }
         }
 
+        private async Task InitiateLights()
+        {
+            logger.LogInformation("Initiating lights");
+
+            lights = mappingConfiguration.Value.Lights.Select(s =>
+                    new Light(logger, new Domain.Timer(logger), webServiceProvider, webSocketServiceProvider, mqttClient, s))
+                .ToArray();
+
+            foreach (var light in lights)
+            {
+                await light.Start();
+            }
+        }
+
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
@@ -82,6 +98,11 @@ namespace Deconz2Mqtt
             foreach (var sensor in sensors)
             {
                 await sensor.Stop();
+            }
+
+            foreach (var light in lights)
+            {
+                await light.Stop();
             }
         }
     }

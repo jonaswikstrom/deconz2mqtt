@@ -40,7 +40,15 @@ namespace Deconz2Mqtt.Domain.Entities
         private void OnMessageReceived(object sender, JObject jObject)
         {
             if (!ConcernsThis(jObject)) return;
-            QueryAndPublishToken(jObject).Wait();
+
+            var jToken = QueryToken(jObject);
+            if (jToken == null)
+            {
+                logger.LogInformation($"State path '{entityConfiguration.StatePath}' for {GetType().Name.ToLowerInvariant()} id '{entityConfiguration.Id}' returned no value");
+                return;
+            }
+
+            PublishPayload(jToken.ToString()).Wait();
         }
 
         protected abstract string EntityType { get; }
@@ -55,17 +63,14 @@ namespace Deconz2Mqtt.Domain.Entities
                    entityTypeToken.ToString().Equals(EntityType, System.StringComparison.InvariantCultureIgnoreCase);
         }
 
-        protected virtual async Task QueryAndPublishToken(JObject jObject)
+        protected virtual JToken QueryToken(JObject jObject)
         {
-            var query = jObject.SelectToken(entityConfiguration.StatePath);
+            return jObject.SelectToken(entityConfiguration.StatePath);
+        }
 
-            if (string.IsNullOrEmpty(query.ToString()))
-            {
-                logger.LogWarning($"State path '{entityConfiguration.StatePath}' for {GetType().Name.ToLowerInvariant()} id '{entityConfiguration.Id}' returns no value");
-                return;
-            }
-
-            var mqttMessage = new MqttMessage(entityConfiguration.StateTopic, query.ToString());
+        protected virtual async Task PublishPayload(string payload)
+        {
+            var mqttMessage = new MqttMessage(entityConfiguration.StateTopic, payload);
             await mqttClient.PublishAsync(mqttMessage);
         }
 
@@ -77,7 +82,7 @@ namespace Deconz2Mqtt.Domain.Entities
             return Task.CompletedTask;
         }
 
-        public async Task Start()
+        public virtual async Task Start()
         {
             logger.LogInformation($"Starting {GetType().Name.ToLowerInvariant()} {entityConfiguration.Id}");
 
@@ -97,7 +102,8 @@ namespace Deconz2Mqtt.Domain.Entities
                 return;
             }
 
-            await QueryAndPublishToken(jObject);
+            var token = QueryToken(jObject);
+            await PublishPayload(token.ToString());
         }
 
         public void Dispose()

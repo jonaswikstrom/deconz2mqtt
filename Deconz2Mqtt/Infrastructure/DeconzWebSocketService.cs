@@ -76,7 +76,7 @@ namespace Deconz2Mqtt.Infrastructure
                     if (result.MessageType != WebSocketMessageType.Text) continue;
                     using var reader = new StreamReader(ms, Encoding.UTF8);
                     var jsonMessage = await reader.ReadToEndAsync();
-                    logger.LogInformation($"Received message: '{jsonMessage}'");
+                    logger.LogInformation($"Web socket message: '{jsonMessage}'");
 
                     var jObject = JObject.Parse(jsonMessage);
                     OnMessageReceived?.Invoke(this, jObject);

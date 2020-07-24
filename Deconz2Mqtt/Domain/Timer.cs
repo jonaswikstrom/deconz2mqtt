@@ -30,7 +30,7 @@ namespace Deconz2Mqtt.Domain
 
         public void Start(TimeSpan timeSpan)
         {
-            logger.LogInformation("Manual state update timer started");
+            logger.LogInformation($"State update timer started with {timeSpan.TotalMilliseconds} ms interval");
 
             timer.Interval = timeSpan.TotalMilliseconds;
             timer.Enabled = true;

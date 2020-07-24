@@ -6,13 +6,11 @@ namespace Deconz2Mqtt.Domain.Entities
 {
     public class Light : Entity
     {
-        private readonly ILogger<Light> logger;
-        private readonly ITimer timer;
         private readonly IWebServiceProvider webServiceProvider;
-        private readonly IWebSocketServiceProvider webSocketServiceProvider;
+        private readonly IMqttClient mqttClient;
         private readonly LightsConfiguration lightsConfiguration;
 
-        public Light(ILogger<Light> logger, 
+        public Light(ILogger logger, 
             ITimer timer, 
             IWebServiceProvider webServiceProvider,
             IWebSocketServiceProvider webSocketServiceProvider, 
@@ -20,10 +18,8 @@ namespace Deconz2Mqtt.Domain.Entities
             LightsConfiguration lightsConfiguration) : 
             base(logger, timer, webSocketServiceProvider, webServiceProvider, mqttClient, lightsConfiguration)
         {
-            this.logger = logger;
-            this.timer = timer;
             this.webServiceProvider = webServiceProvider;
-            this.webSocketServiceProvider = webSocketServiceProvider;
+            this.mqttClient = mqttClient;
             this.lightsConfiguration = lightsConfiguration;
 
             mqttClient.OnMessageReceived += OnMessageReceived;
@@ -37,5 +33,18 @@ namespace Deconz2Mqtt.Domain.Entities
         }
 
         protected override string EntityType => "lights";
+
+        public override async Task Stop()
+        {
+            await base.Stop();
+            await mqttClient.UnSubscribe(lightsConfiguration.CommandTopic);
+            mqttClient.OnMessageReceived -= OnMessageReceived;
+        }
+
+        public override async Task Start()
+        {
+            await base.Start();
+            await mqttClient.Subscribe(lightsConfiguration.CommandTopic);
+        }
     }
 }

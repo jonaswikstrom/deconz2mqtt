@@ -11,6 +11,8 @@ namespace Deconz2Mqtt.Domain
         Task DisconnectAsync();
 
         Task Subscribe(string topic);
+        Task UnSubscribe(string topic);
+
         event EventHandler<MqttMessage> OnMessageReceived;
     }
 }
