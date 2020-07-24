@@ -34,16 +34,16 @@ namespace Deconz2Mqtt.Domain.Entities
             {
                 logger.LogWarning(
                     $"Payload '{payload}' for sensor id '{sensorConfig.Id}' is defined to be a decimal, but is not");
-            }
-            else
-            {
-                var divisor = sensorConfig.Divisor ?? 1;
-                decimalPayload = decimalPayload / divisor;
 
-                if (sensorConfig.Decimals.HasValue)
-                {
-                    decimalPayload = Math.Round(decimalPayload, sensorConfig.Decimals.Value);
-                }
+                return base.PublishPayload(payload);
+            }
+
+            var divisor = sensorConfig.Divisor ?? 1;
+            decimalPayload = decimalPayload / divisor;
+
+            if (sensorConfig.Decimals.HasValue)
+            {
+                decimalPayload = Math.Round(decimalPayload, sensorConfig.Decimals.Value);
             }
 
             return base.PublishPayload(decimalPayload.ToString(CultureInfo.InvariantCulture));
