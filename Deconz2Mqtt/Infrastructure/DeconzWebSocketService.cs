@@ -9,17 +9,17 @@ using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Infrastructure
 {
-    public class DeconzWebSocketServiceProvider  : IDeconzWebSocketServiceProvider, IDisposable
+    public class WebSocketServiceProvider  : IWebSocketServiceProvider, IDisposable
     {
-        private readonly ILogger<DeconzWebSocketServiceProvider> logger;
+        private readonly ILogger<WebSocketServiceProvider> logger;
         private readonly DeconzSettings settings;
         private readonly ClientWebSocket webSocket;
-        private Action<WebSocketMessage> action;
 
-        public DeconzWebSocketServiceProvider(ILogger<DeconzWebSocketServiceProvider> logger, IOptions<DeconzSettings> settings)
+        public WebSocketServiceProvider(ILogger<WebSocketServiceProvider> logger, IOptions<DeconzSettings> settings)
         {
             this.logger = logger;
             this.settings = settings.Value;
@@ -45,10 +45,7 @@ namespace Deconz2Mqtt.Infrastructure
             logger.LogInformation("Closed");
         }
 
-        public void OnMessageReceived(Action<WebSocketMessage> action)
-        {
-            this.action = action;
-        }
+        public event EventHandler<JObject> OnMessageReceived;
 
         private async Task ReceiveAsync()
         {
@@ -57,7 +54,7 @@ namespace Deconz2Mqtt.Infrastructure
             var buffer = new ArraySegment<byte>(new byte[8192]);
             while (webSocket.State == WebSocketState.Open)
             {
-                WebSocketReceiveResult result = null;
+                WebSocketReceiveResult result;
                 await using var ms = new MemoryStream();
                 do
                 {
@@ -79,10 +76,10 @@ namespace Deconz2Mqtt.Infrastructure
                     if (result.MessageType != WebSocketMessageType.Text) continue;
                     using var reader = new StreamReader(ms, Encoding.UTF8);
                     var jsonMessage = await reader.ReadToEndAsync();
-                    logger.LogInformation($"Received message: '{jsonMessage}'");
+                    logger.LogInformation($"Web socket message: '{jsonMessage}'");
 
-                    var fullState = JsonConvert.DeserializeObject<WebSocketMessage>(jsonMessage);
-                    action?.Invoke(fullState);
+                    var jObject = JObject.Parse(jsonMessage);
+                    OnMessageReceived?.Invoke(this, jObject);
                 }
             }
 

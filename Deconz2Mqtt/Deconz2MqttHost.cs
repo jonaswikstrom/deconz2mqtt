@@ -1,14 +1,17 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain;
+using Deconz2Mqtt.Domain.Entities;
 using Deconz2Mqtt.Domain.Model;
-using Deconz2Mqtt.Domain.MqttMessageHandlers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Timer = System.Threading.Timer;
+
 // ReSharper disable PossibleMultipleEnumeration
 
 namespace Deconz2Mqtt
@@ -17,54 +20,27 @@ namespace Deconz2Mqtt
     public class Deconz2MqttHost : IHostedService
     {
         private readonly ILogger<Deconz2MqttHost> logger;
-        private readonly IDeconzWebSocketServiceProvider deconzWebSocketServiceProvider;
-        private readonly IDeconzWebServiceProvider deconzWebServiceProvider;
-        private readonly IDeconzHeartBeatTimer deconzHeartBeatTimer;
+        private readonly IWebServiceProvider webServiceProvider;
+        private readonly IWebSocketServiceProvider webSocketServiceProvider;
         private readonly IMqttClient mqttClient;
         private readonly IHostApplicationLifetime applicationLifetime;
-        private readonly IEnumerable<ISensorToMqttMessageHandler> sensorToMqttMessageHandlers;
-        private readonly ConcurrentDictionary<string, Sensor> sensorsDictionary;
+        private readonly IOptions<MappingsConfiguration> mappingConfiguration;
+        private Sensor[] sensors;
+        private Light[] lights;
 
-
-        public Deconz2MqttHost(ILogger<Deconz2MqttHost> logger, 
-            IDeconzWebSocketServiceProvider deconzWebSocketServiceProvider, 
-            IDeconzWebServiceProvider deconzWebServiceProvider, 
-            IDeconzHeartBeatTimer deconzHeartBeatTimer, 
+        public Deconz2MqttHost(ILogger<Deconz2MqttHost> logger,
+            IWebServiceProvider webServiceProvider,
+            IWebSocketServiceProvider webSocketServiceProvider,
             IMqttClient mqttClient,
             IHostApplicationLifetime applicationLifetime,
-            IEnumerable<ISensorToMqttMessageHandler> sensorToMqttMessageHandlers)
+            IOptions<MappingsConfiguration> mappingConfiguration)
         {
             this.logger = logger;
-            this.deconzWebSocketServiceProvider = deconzWebSocketServiceProvider;
-            this.deconzWebServiceProvider = deconzWebServiceProvider;
-            this.deconzHeartBeatTimer = deconzHeartBeatTimer;
+            this.webServiceProvider = webServiceProvider;
+            this.webSocketServiceProvider = webSocketServiceProvider;
             this.mqttClient = mqttClient;
             this.applicationLifetime = applicationLifetime;
-            this.sensorToMqttMessageHandlers = sensorToMqttMessageHandlers.ToArray();
-
-            sensorsDictionary = new ConcurrentDictionary<string, Sensor>();
-
-            deconzHeartBeatTimer.OnHeartBeat(async () =>
-            {
-                var fullState = await deconzWebServiceProvider.GetFullState();
-                CreateOrUpdateSensorsDictionary(fullState);
-                await SendSensorsDictionaryData();
-            });
-
-
-            deconzWebSocketServiceProvider.OnMessageReceived(async message =>
-            {
-                if (!sensorsDictionary.TryGetValue(message.Id, out var sensor)) return;
-
-                var mqttMessages = sensorToMqttMessageHandlers.Select(p => p.HandleState(sensor.Name, message.State))
-                    .Where(p => p != null);
-
-                foreach (var mmqttMessage in mqttMessages)
-                {
-                    await mqttClient.PublishAsync(mmqttMessage);
-                }
-            });
-
+            this.mappingConfiguration = mappingConfiguration;
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
@@ -74,42 +50,60 @@ namespace Deconz2Mqtt
 
         private async Task OnStarted()
         {
-            await mqttClient.ConnectAsync();
+            var tasks = new[]
+            {
+                mqttClient.ConnectAsync(),
+                webSocketServiceProvider.ConnectAsync(),
+                InitiateSensors(),
+                InitiateLights()
+            };
 
-            var fullState = await deconzWebServiceProvider.GetFullState();
-            CreateOrUpdateSensorsDictionary(fullState);
-            await SendSensorsDictionaryData();
-            deconzHeartBeatTimer.Start();
-            await deconzWebSocketServiceProvider.ConnectAsync();
+            await Task.WhenAll(tasks);
         }
 
-        public void CreateOrUpdateSensorsDictionary(FullState fullState)
+        private async Task InitiateSensors()
         {
-            foreach (var (key, sensor) in fullState.Sensors)
+            logger.LogInformation("Initiating sensors");
+
+            sensors = mappingConfiguration.Value.Sensors.Select(s => 
+                new Sensor(logger, new Domain.Timer(logger), webServiceProvider, webSocketServiceProvider, mqttClient, s))
+                .ToArray();
+
+            foreach (var sensor in sensors)
             {
-                sensorsDictionary.AddOrUpdate(key, sensor, (_, oldValue) => sensor);
+                await sensor.Start();
             }
         }
 
-        private async Task SendSensorsDictionaryData()
+        private async Task InitiateLights()
         {
-            foreach (var sensor in sensorsDictionary.Values)
-            {
-                var messageHandlers =  sensorToMqttMessageHandlers.Select(p => p.HandleState(sensor.Name, sensor.State))
-                    .Where(p => p != null);
+            logger.LogInformation("Initiating lights");
 
-                foreach (var message in messageHandlers)
-                {
-                    await mqttClient.PublishAsync(message);
-                }
+            lights = mappingConfiguration.Value.Lights.Select(s =>
+                    new Light(logger, new Domain.Timer(logger), webServiceProvider, webSocketServiceProvider, mqttClient, s))
+                .ToArray();
+
+            foreach (var light in lights)
+            {
+                await light.Start();
             }
         }
+
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            deconzHeartBeatTimer.Stop();
-            await deconzWebSocketServiceProvider.DisconnectAsync();
+            await webSocketServiceProvider.DisconnectAsync();
             await mqttClient.DisconnectAsync();
+
+            foreach (var sensor in sensors)
+            {
+                await sensor.Stop();
+            }
+
+            foreach (var light in lights)
+            {
+                await light.Stop();
+            }
         }
     }
 }
