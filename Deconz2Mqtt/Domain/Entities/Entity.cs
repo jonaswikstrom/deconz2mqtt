@@ -113,7 +113,10 @@ namespace Deconz2Mqtt.Domain.Entities
         {
             logger.LogInformation($"Starting {EntityTypeName} {entityConfiguration.Id}");
 
-            await StateUpdate();
+            if (!entityConfiguration.IgnoreStateUpdateAtStartup)
+            {
+                await StateUpdate();
+            }
             if (!entityConfiguration.StateUpdateInterval.HasValue) return;
             timer.Start(entityConfiguration.StateUpdateInterval.Value);
         }
