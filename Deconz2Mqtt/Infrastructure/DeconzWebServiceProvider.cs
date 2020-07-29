@@ -7,6 +7,7 @@ using Deconz2Mqtt.Domain.Entities;
 using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Infrastructure
@@ -37,10 +38,34 @@ namespace Deconz2Mqtt.Infrastructure
             return jObject;
         }
 
-        public async Task SetState(string uri, string payload)
+        public async Task<bool> SetState(string uri, string payload)
         {
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            await httpClient.PutAsync(uri, content);
+            var result = await httpClient.PutAsync(uri, content);
+
+            if (result.IsSuccessStatusCode) return true;
+
+            var error = await result.Content.ReadAsAsync<ErrorInformation>();
+            logger.LogWarning($"Could not set state on '{error.Error.Address}', '{error.Error.Description}'");
+            return false;
+        }
+
+        public class ErrorInformation
+        {
+            [JsonProperty("error")]
+            public Error Error { get; set; }
+        }
+
+        public class Error
+        {
+            [JsonProperty("address")]
+            public string Address { get; set; }
+
+            [JsonProperty("description")]
+            public string Description { get; set; }
+
+            [JsonProperty("type")]
+            public long Type { get; set; }
         }
     }
 }

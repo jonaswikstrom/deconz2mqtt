@@ -6,6 +6,6 @@ namespace Deconz2Mqtt.Domain
     public interface IWebServiceProvider
     {
         Task<JObject> GetState(string uri);
-        Task SetState(string uri, string payload);
+        Task<bool> SetState(string uri, string payload);
     }
 }
