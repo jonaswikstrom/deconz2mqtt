@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Logging;
 
@@ -29,7 +30,9 @@ namespace Deconz2Mqtt.Domain.Entities
         {
             if (!e.Topic.Equals(lightsConfiguration.CommandTopic, System.StringComparison.InvariantCultureIgnoreCase)) return;
 
-            webServiceProvider.SetState($"lights/{lightsConfiguration.Id}/state", e.Payload);
+            var lastPath = lightsConfiguration.StatePath.Split('.').Last();
+            var payload = string.Concat("{\"", lastPath, "\":" , e.Payload, "}");
+            webServiceProvider.SetState($"lights/{lightsConfiguration.Id}/state", payload);
         }
 
         protected override string EntityType => "lights";
