@@ -98,6 +98,7 @@ namespace Deconz2Mqtt.Infrastructure
         public async Task Subscribe(string topic)
         {
             await client.SubscribeAsync(new TopicFilterBuilder().WithTopic(topic).Build());
+            logger.LogInformation($"Subscribed to: '{topic}'");
         }
 
         public async Task UnSubscribe(string topic)
