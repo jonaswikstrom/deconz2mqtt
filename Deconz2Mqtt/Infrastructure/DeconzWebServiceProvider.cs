@@ -24,10 +24,10 @@ namespace Deconz2Mqtt.Infrastructure
             this.settings = settings;
             httpClient = new HttpClient()
             {
-                BaseAddress =  new Uri($"http://{settings.Value.HostName}:{settings.Value.Port}/api/{settings.Value.ApiKey}/")
+                BaseAddress =
+                    new Uri($"http://{settings.Value.HostName}:{settings.Value.Port}/api/{settings.Value.ApiKey}/")
             };
         }
-
 
         public async Task<JObject> GetState(string uri)
         {
@@ -45,27 +45,12 @@ namespace Deconz2Mqtt.Infrastructure
 
             if (result.IsSuccessStatusCode) return true;
 
-            var error = await result.Content.ReadAsAsync<ErrorInformation>();
-            logger.LogWarning($"Could not set state on '{error.Error.Address}', '{error.Error.Description}'");
+            var stringResult = await result.Content.ReadAsStringAsync();
+            var errorResult = JArray.Parse(stringResult);
+            var errorDescription = errorResult.SelectToken("$..description");
+
+            logger.LogWarning($"Could not set payload '{payload}' on '{uri}'. Error: '{errorDescription}'");
             return false;
-        }
-
-        public class ErrorInformation
-        {
-            [JsonProperty("error")]
-            public Error Error { get; set; }
-        }
-
-        public class Error
-        {
-            [JsonProperty("address")]
-            public string Address { get; set; }
-
-            [JsonProperty("description")]
-            public string Description { get; set; }
-
-            [JsonProperty("type")]
-            public long Type { get; set; }
         }
     }
 }

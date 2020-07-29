@@ -97,16 +97,17 @@ namespace Deconz2Mqtt.Infrastructure
 
         public async Task Subscribe(string topic)
         {
-            await client.SubscribeAsync(new TopicFilterBuilder().WithTopic(topic).Build());
-            logger.LogInformation($"Subscribed to: '{topic}'");
+            logger.LogInformation($"Subscribing to: '{settings.Value.TopicRoot}/{topic}'");
+            await client.SubscribeAsync(new TopicFilterBuilder().WithTopic($"{settings.Value.TopicRoot}/{topic}").Build());
         }
 
         public async Task UnSubscribe(string topic)
         {
-            await client.UnsubscribeAsync(topic);
+            await client.UnsubscribeAsync($"{settings.Value.TopicRoot}/{topic}");
         }
 
         public event EventHandler<MqttMessage> OnMessageReceived;
+        public string TopicRoot => settings.Value.TopicRoot;
     }
 
 }

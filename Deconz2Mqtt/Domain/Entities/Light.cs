@@ -28,7 +28,7 @@ namespace Deconz2Mqtt.Domain.Entities
 
         private void OnMessageReceived(object sender, MqttMessage e)
         {
-            if (!e.Topic.Equals(lightsConfiguration.CommandTopic, System.StringComparison.InvariantCultureIgnoreCase)) return;
+            if (!e.Topic.Equals($"{mqttClient.TopicRoot}/{lightsConfiguration.CommandTopic}", System.StringComparison.InvariantCultureIgnoreCase)) return;
 
             var lastPath = lightsConfiguration.StatePath.Split('.').Last();
             var payload = string.Concat("{\"", lastPath, "\":" , e.Payload, "}");
@@ -47,7 +47,7 @@ namespace Deconz2Mqtt.Domain.Entities
         public override async Task Start()
         {
             await base.Start();
-            await mqttClient.Subscribe(lightsConfiguration.CommandTopic);
+            await mqttClient.Subscribe( lightsConfiguration.CommandTopic);
         }
     }
 }

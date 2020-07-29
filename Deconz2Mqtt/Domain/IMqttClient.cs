@@ -14,5 +14,7 @@ namespace Deconz2Mqtt.Domain
         Task UnSubscribe(string topic);
 
         event EventHandler<MqttMessage> OnMessageReceived;
+
+        string TopicRoot { get; }
     }
 }

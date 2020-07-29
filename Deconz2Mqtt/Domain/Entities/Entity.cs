@@ -1,7 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Globalization;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Domain.Entities
@@ -19,7 +22,7 @@ namespace Deconz2Mqtt.Domain.Entities
             ITimer timer,
             IWebSocketServiceProvider webSocketServiceProvider,
             IWebServiceProvider webServiceProvider,
-            IMqttClient mqttClient, 
+            IMqttClient mqttClient,
             EntityConfiguration entityConfiguration)
         {
             this.logger = logger;
@@ -48,7 +51,7 @@ namespace Deconz2Mqtt.Domain.Entities
                 return;
             }
 
-            PublishPayload(jToken.ToString()).Wait();
+            PublishPayload(jToken.ToString(Formatting.None)).Wait();
         }
 
         protected abstract string EntityType { get; }
@@ -70,13 +73,37 @@ namespace Deconz2Mqtt.Domain.Entities
 
         protected virtual async Task PublishPayload(string payload)
         {
+            if (entityConfiguration.Decimals.HasValue || entityConfiguration.Divisor.HasValue)
+            {
+                payload = ParseDecimalTypedPayload(payload);
+            }
+
             var mqttMessage = new MqttMessage(entityConfiguration.StateTopic, payload);
             await mqttClient.PublishAsync(mqttMessage);
         }
 
+
+        protected virtual string ParseDecimalTypedPayload(string payload)
+        {
+            if (!decimal.TryParse(payload, out var decimalPayload))
+            {
+                logger.LogWarning(
+                    $"Payload '{payload}' for {EntityTypeName} with id '{entityConfiguration.Id}' is defined to be a decimal, but is not");
+
+                return payload;
+            }
+
+            decimalPayload = decimalPayload / (entityConfiguration.Divisor ?? 1);
+            decimalPayload = Math.Round(decimalPayload, entityConfiguration.Decimals ?? 2);
+
+            return decimalPayload.ToString(CultureInfo.InvariantCulture);
+        }
+
+        protected string EntityTypeName => GetType().Name.ToLowerInvariant();
+
         public virtual Task Stop()
         {
-            logger.LogInformation($"Stopping {GetType().Name.ToLowerInvariant()} {entityConfiguration.Id}");
+            logger.LogInformation($"Stopping {EntityTypeName} {entityConfiguration.Id}");
             timer?.Stop();
             webSocketServiceProvider.OnMessageReceived -= OnMessageReceived;
             return Task.CompletedTask;
@@ -84,7 +111,7 @@ namespace Deconz2Mqtt.Domain.Entities
 
         public virtual async Task Start()
         {
-            logger.LogInformation($"Starting {GetType().Name.ToLowerInvariant()} {entityConfiguration.Id}");
+            logger.LogInformation($"Starting {EntityTypeName} {entityConfiguration.Id}");
 
             await StateUpdate();
             if (!entityConfiguration.StateUpdateInterval.HasValue) return;
@@ -93,12 +120,12 @@ namespace Deconz2Mqtt.Domain.Entities
 
         private async Task StateUpdate()
         {
-            logger.LogInformation($"Manual state read for {GetType().Name.ToLowerInvariant()} {entityConfiguration.Id}");
+            logger.LogInformation($"Manual state read for {EntityTypeName} {entityConfiguration.Id}");
             var jObject = await webServiceProvider.GetState($"{EntityType}/{entityConfiguration.Id}");
 
             if (jObject == null)
             {
-                logger.LogWarning($"No state information for {GetType().Name.ToLowerInvariant()} with id '{entityConfiguration.Id}'");
+                logger.LogWarning($"No state information for {EntityTypeName} with id '{entityConfiguration.Id}'");
                 return;
             }
 

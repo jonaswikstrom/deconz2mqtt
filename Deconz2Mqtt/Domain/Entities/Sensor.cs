@@ -25,28 +25,5 @@ namespace Deconz2Mqtt.Domain.Entities
         }
 
         protected override string EntityType => "sensors";
-
-        protected override Task PublishPayload(string payload)
-        {
-            if (!sensorConfig.Divisor.HasValue && !sensorConfig.Decimals.HasValue) return base.PublishPayload(payload);
-
-            if (!decimal.TryParse(payload, out var decimalPayload))
-            {
-                logger.LogWarning(
-                    $"Payload '{payload}' for sensor id '{sensorConfig.Id}' is defined to be a decimal, but is not");
-
-                return base.PublishPayload(payload);
-            }
-
-            var divisor = sensorConfig.Divisor ?? 1;
-            decimalPayload = decimalPayload / divisor;
-
-            if (sensorConfig.Decimals.HasValue)
-            {
-                decimalPayload = Math.Round(decimalPayload, sensorConfig.Decimals.Value);
-            }
-
-            return base.PublishPayload(decimalPayload.ToString(CultureInfo.InvariantCulture));
-        }
     }
 }
