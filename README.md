@@ -40,26 +40,22 @@ The appsettings file is divided into thre parts Deconz, Mqtt and Mappings:
 ### Deconz
 This is the settings for deConz:
 
-``` 
-"Deconz": {
-    "ApiKey": "<apikey>", 
-    "HostName": "<hostname>", 
-    "Port": <api port number>,
-    "WebSocketPort": <web socket port>
-  }
-```
-    
+| Name | Mandatory | Comment |
+|-|-|-|
+| ApiKey | yes | The key used for calls towards the deConz API |
+| HostName | yes | The name/ip to the deConz host e.g. *10.0.0.6* |
+| Port | yes | The port number to the deConz host, usually *8090* |
+| WebSocketPort | yes | The port number to the deConz web socket, usually 4433 |
+
 ### Mqtt
 This is the settings for the MQTT host
 
-``` 
-"Mqtt": {
-    "HostName": "<hostname>",
-    "Username": "<username>",
-    "Password": "<password>",
-    "TopicRoot": "<topic root>"
-  }
-```
+| Name | Mandatory | Comment |
+|-|-|-|
+| HostName | yes | The name/ip to the MQTT host e.g. *192.168.1.5* |
+| UserName | yes | The user name to the MQTT host |
+| Password | yes | The password to the MQTT host |
+| TopicRoot | yes | The topic root used for all publications to MQTT |
 
 ### Mappings
 This is where you defines which sensors and lights to handle and how these should be configured for requests and responses from MQTT. The configured entities should be mapped using the structure defined by deConz. 
@@ -69,7 +65,7 @@ Browse to ```http://<host>:<hostport>/api/<apikey>``` where you can get a JSON r
 The mappings is divided into *sensors* and *lights* where both entities share the functionality for state reading. The system monitors the payload given for each entity and publishes the defined part of this on a specific MQTT topic. The *Lights* entities subscribes to a specific MQTT command topic and performs a *PUT* statement towards the deConz-API with defined payload.
 
 #### Sensors
-Following properties can be used for a sensor
+Following properties must and can be used for a sensor
 
 | Name | Mandatory | Comment |
 |-|-|-|
@@ -81,5 +77,63 @@ Following properties can be used for a sensor
 | Decimals | no | Rounds the payload value to use the given number of decimals. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
 | IgnoreStateUpdateAtStartup | no | Do not perform a manual state update at startup. |
 
+#### Lights
+Following properties must and can be used for a light entity. 
 
- 
+| Name | Mandatory | Comment |
+|-|-|-|
+| Id | yes | Defines the id of the sensor to monitor  |
+| StatePath | yes | Defines the path to the part of the sensor payload to forward to MQTT. A complex JSON-path query can be used as a query. |
+| StateTopic | yes | The topic used when publishing the payload to MQTT. This value is combined with the *TopicRoot* defined in the *MQTT* section. |
+| StateUpdateInterval | no | A timespan used to periodically read the state value e.g. "00:01:00" reads the value every minute. |
+| Divisor | no | Divides the payload result by the given number. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
+| Decimals | no | Rounds the payload value to use the given number of decimals. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
+| IgnoreStateUpdateAtStartup | no | Do not perform a manual state update at startup. |
+| CommandTopic | yes | Defines the topic used for subscription.   OBSERVE! - The payload is used to control the light and should be simple, e.g. true/false/ON/OFF, NOT a JSON.  - The last part of the *StatePath* is used to create the JSON paylod for the PUT command against deConz-API e.g. *state.on* with a true payload, will result in the JSON ```{"on":true}``` |
+
+### Example
+Here is an example of a *appsettings.json* file:
+```
+{
+  "Deconz": {
+    "ApiKey": "ABE9917F63",
+    "HostName": "10.0.0.6",
+    "Port": 8090,
+    "WebSocketPort": 4433
+  },
+  "Mqtt": {
+    "HostName": "192.168.1.5",
+    "Username": "pi",
+    "Password": "Raspberry",
+    "TopicRoot": "deconz"
+  },
+  "Mappings": {
+    "Sensors": [
+      {
+        "Id": "2",
+        "StatePath": "state.temperature",
+        "StateTopic": "cellarroom/temperature",
+        "StateUpdateInterval": "00:05:00",
+        "Divisor" : 100,
+        "Decimals": 1,
+        "IgnoreStateUpdateAtStartup": true 
+
+      },
+      {
+        "Id": "2",
+        "StatePath": "config.battery",
+        "StateTopic": "cellarroom/battery"
+      }
+    ],
+    "Lights": [
+      {
+        "Name": "Lightbulb",
+        "Id": "12",
+        "StatePath": "state.on",
+        "StateTopic": "outsidelamp/on",
+        "CommandTopic": "outsidelamp/on/cmnd"
+      }
+    ]
+  }
+}
+```
