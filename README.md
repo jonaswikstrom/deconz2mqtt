@@ -9,7 +9,7 @@ The application is based upon Microsoft .NET Core 3.1, fully able to install and
 - deconz2mqtt_arm32 (Tested and run on Rpi Model 3b+ running Raspian Buster)
 
 ## Docker compose
-The following docker compose can be used. Pay attention to the volume mount for the appsettings file
+The following docker compose can be used. Pay attention to the volume mount for the appsettings file. Best way is to create the source path e.g. */home/pi/docker/deconz2mqtt/* first and then create the file *appsettings.json* within that catalogue.
 
 ```
 deconz2mqtt:
