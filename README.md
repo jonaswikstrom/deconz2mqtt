@@ -76,6 +76,7 @@ Following properties must and can be used for a sensor
 | Divisor | no | Divides the payload result by the given number. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
 | Decimals | no | Rounds the payload value to use the given number of decimals. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
 | IgnoreStateUpdateAtStartup | no | Do not perform a manual state update at startup. |
+| PollOnly | no | WebSocket events are ignored. |
 
 #### Lights
 Following properties must and can be used for a light entity. 
@@ -90,6 +91,7 @@ Following properties must and can be used for a light entity.
 | Decimals | no | Rounds the payload value to use the given number of decimals. If the payload is not a numeric value there will be a log warning and the original payload  will be published |
 | IgnoreStateUpdateAtStartup | no | Do not perform a manual state update at startup. |
 | CommandTopic | yes | Defines the topic used for subscription.   OBSERVE! - The payload is used to control the light and should be simple, e.g. true/false/ON/OFF, NOT a JSON.  - The last part of the *StatePath* is used to create the JSON paylod for the PUT command against deConz-API e.g. *state.on* with a true payload, will result in the JSON ```{"on":true}``` |
+| PollOnly | no | WebSocket events are ignored. |
 
 ### Example
 Here is an example of a *appsettings.json* file:
@@ -116,8 +118,16 @@ Here is an example of a *appsettings.json* file:
         "StateUpdateInterval": "00:05:00",
         "Divisor" : 100,
         "Decimals": 1,
-        "IgnoreStateUpdateAtStartup": true 
-
+        "IgnoreStateUpdateAtStartup": true
+      },
+      {
+        "Id": "2",
+        "StatePath": "state.humidity",
+        "StateTopic": "cellarroom/humidity",
+        "StateUpdateInterval": "00:05:00",
+        "Divisor" : 100,
+        "Decimals": 1,
+        "PollOnly": true
       },
       {
         "Id": "2",
