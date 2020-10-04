@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Deconz2Mqtt.Domain.Model
+﻿namespace Deconz2Mqtt.Domain.Model
 {
     public class DeconzSettings
     {

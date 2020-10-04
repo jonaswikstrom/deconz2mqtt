@@ -1,16 +1,12 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain;
 using Deconz2Mqtt.Domain.Entities;
 using Deconz2Mqtt.Domain.Model;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Timer = System.Threading.Timer;
 
 // ReSharper disable PossibleMultipleEnumeration
 

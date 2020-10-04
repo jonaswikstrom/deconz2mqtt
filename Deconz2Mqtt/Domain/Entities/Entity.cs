@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Globalization;
 using System.Threading.Tasks;
 using Deconz2Mqtt.Domain.Model;
@@ -17,6 +16,7 @@ namespace Deconz2Mqtt.Domain.Entities
         private readonly EntityConfiguration entityConfiguration;
         private readonly ITimer timer;
         private readonly IWebSocketServiceProvider webSocketServiceProvider;
+        private string oldPayload;
 
         protected Entity(ILogger logger,
             ITimer timer,
@@ -32,7 +32,7 @@ namespace Deconz2Mqtt.Domain.Entities
             this.mqttClient = mqttClient;
             this.entityConfiguration = entityConfiguration;
 
-            webSocketServiceProvider.OnMessageReceived += OnMessageReceived;
+            if(!entityConfiguration.PollOnly) webSocketServiceProvider.OnMessageReceived += OnMessageReceived;
 
             timer.OnTimerElapsed(async () =>
             {
@@ -51,7 +51,10 @@ namespace Deconz2Mqtt.Domain.Entities
                 return;
             }
 
-            PublishPayload(jToken.ToString(Formatting.None)).Wait();
+            var payload = jToken.ToString(Formatting.None);
+            if (!string.IsNullOrEmpty(oldPayload) && oldPayload.Equals(payload)) return;
+            oldPayload = payload;
+            PublishPayload(payload).Wait();
         }
 
         protected abstract string EntityType { get; }

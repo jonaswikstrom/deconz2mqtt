@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Timers;
-using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Deconz2Mqtt.Domain
 {

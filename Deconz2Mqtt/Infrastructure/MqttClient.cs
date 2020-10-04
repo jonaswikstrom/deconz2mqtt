@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Deconz2Mqtt.Domain;
 using Deconz2Mqtt.Domain.Model;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,8 +9,6 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Options;
-using MQTTnet.Client.Subscribing;
-using MQTTnet.Client.Unsubscribing;
 using IMqttClient = Deconz2Mqtt.Domain.IMqttClient;
 
 namespace Deconz2Mqtt.Infrastructure
