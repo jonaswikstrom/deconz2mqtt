@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Deconz2Mqtt.Domain.Model
+﻿namespace Deconz2Mqtt.Domain.Model
 {
     public class MqttMessage
     {

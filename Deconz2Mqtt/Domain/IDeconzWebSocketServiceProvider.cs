@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Deconz2Mqtt.Domain.Model;
 using Newtonsoft.Json.Linq;
 
 namespace Deconz2Mqtt.Domain
