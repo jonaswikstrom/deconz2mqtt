@@ -32,7 +32,10 @@ namespace Deconz2Mqtt.Domain.Entities
             this.mqttClient = mqttClient;
             this.entityConfiguration = entityConfiguration;
 
-            if(!entityConfiguration.PollOnly) webSocketServiceProvider.OnMessageReceived += OnMessageReceived;
+            if (entityConfiguration.PollOnly)
+                logger.LogInformation($"Entity {GetType().Name.ToLowerInvariant()} - '{entityConfiguration.Id}' -  '{entityConfiguration.StatePath}' will only poll state");
+            else
+                webSocketServiceProvider.OnMessageReceived += OnMessageReceived;
 
             timer.OnTimerElapsed(async () =>
             {
